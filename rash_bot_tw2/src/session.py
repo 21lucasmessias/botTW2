@@ -1,5 +1,5 @@
 class Session:
-    def __init__(self, sUsername = 'fslucasfs', sPassword = '123456abc', sId = '', sWorldId = '', iHeaderId = 0, bLogged = False, bLogOff = False):
+    def __init__(self, sUsername='fslucasfs', sPassword = '123456abc', sId = '', sWorldId = '', iHeaderId = 0, bLogged = False, bLogOff = False):
         self.sUsername = 'fslucasfs'
         self.sPassword = '123456abc'
         self.sId = ''
@@ -7,6 +7,9 @@ class Session:
         self.iHeaderId = 0
         self.bLogged = False
         self.bLogOff = False
+        self.lCommands = []
+        self.lVillagesPlayer = []
+        self.lVillagesBarbarians = []
         self.idToWorld = {
             '1': 'br43',
             '2': 'br44',
