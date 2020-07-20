@@ -1,0 +1,1 @@
+Criar um loop infinito onde ele sleepa a quantidade de tempo do menor tempo para conclusão de ataque e assim que o ataque retornar, perguntar se gostaria de enviar novamente.

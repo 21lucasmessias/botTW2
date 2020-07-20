@@ -10,6 +10,7 @@ class Session:
         self.lCommands = []
         self.lVillagesPlayer = []
         self.lVillagesBarbarians = []
+        self.lInventory = []
         self.idToWorld = {
             '1': 'br43',
             '2': 'br44',
