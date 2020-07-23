@@ -8,7 +8,5 @@ if __name__ == "__main__":
     customWebsocket = CustomWebsocket(session)
     asLoop = asyncio.get_event_loop()
 
-    asLoop.run_until_complete(customWebsocket.tryLogin())
-    
-
+    asLoop.run_until_complete(customWebsocket.tryLogin())      
     asLoop.close()
