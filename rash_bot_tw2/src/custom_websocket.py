@@ -96,23 +96,15 @@ class CustomWebsocket:
 
             for village in self.session.lVillagesPlayer:
                 print(f"Proximo ataque em: {village['lAtqs'][0]['time_completed'] - self.session.iActualTime}")
-                if village['lAtqs'][0]['time_completed'] <= self.session.iActualTime:
+                if village['lAtqs'][0]['time_completed'] < self.session.iActualTime:
                     await ws.send(produceMessage(self, 'Command/sendCustomArmy',{"start_village":village['id'],"target_village":village['lAtqs'][0]['id_barb'],"type":"attack","units":village['lAtqs'][0]['units'],"icon":0,"officers":{},"catapult_target":"headquarter"}))
-                    print(f"Tropas enviadas de {village['id']} para {village['lAtqs'][0]['id_barb']}")
-                    village['lAtqs'][0]['time_completed'] = self.session.iActualTime + 15 + village['lAtqs'][0]['time']
+                    await self.msgHandler.RequestHandler(village=village, units=village['lAtqs'][0]['units'])
+                    del village['lAtqs'][0]
+
                     self.sortTimingCommands
+
+                    print(f"Tropas enviadas de {village['id']} para {village['lAtqs'][0]['id_barb']}")
                 else:
                     await ws.send('2')
 
             sleep(random.randrange(7,12))
-
-    '''async def tryGetResource(self, ws):
-        msg = produceMessage(self,'ResourceDeposit/getInfo')
-        await ws.send(msg)
-        async for msgServer in ws:
-            if 'type' in msgServer:
-                objr = json.loads(msgServer[msgServer.find('{'):msgServer.rfind('}')+1])
-
-                if objr['type'] == 'ResourceDeposit/info':
-                    for job in objr['data']['jobs']:
-                        msg = produceMessage(self, 'ResourceDeposit/startJob', {"job_id":str(job['id'])},)'''

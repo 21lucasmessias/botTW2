@@ -15,7 +15,6 @@ class MessageHandler:
             'Map/villageDetails': self.Map_villageDetails,
             'Overview/commands': self.Overview_commands,
             'System/time': self.System_time,
-            'System/error': self.System_error,
             'Map/villageData': self.Map_villageData,
             'Command/sent': self.Command_sent,
         }
@@ -104,6 +103,7 @@ class MessageHandler:
             if bvillage['name'] == 'Aldeia Bárbara':
                 for pVillage in self.session.lVillagesPlayer:
                     pVillage['lBarb'].append({'id':bvillage['id'], 'dist':abs(bvillage['x'] - pVillage['x']) + abs(bvillage['y'] - pVillage['y'])})
+                    
         return True
 
     # Atualiza a lista de comandos
@@ -115,7 +115,6 @@ class MessageHandler:
             'id_vil': self.oRcv['data']['origin']['id'],
             'id_barb': self.oRcv['data']['target']['id'],
             'time_completed': self.oRcv['data']['time_completed'],
-            'time': (self.oRcv['data']['time_completed'] - self.oRcv['data']['time_start']),
         })
 
         return True
@@ -126,18 +125,14 @@ class MessageHandler:
 
         return True
 
-    # SystemError
-    async def System_error(self, **kwargs):
-        self.session.bLogged = False
-        
-        return True
-
     async def RequestHandler(self, **kwargs):      
         async for msgServer in self.ws:
+            print(msgServer)
             try:
                 if 'type' in msgServer:
                     self.oRcv = getJsonFromMsg(msgServer)
                     if await self.MsgsCall[self.oRcv['type']](**kwargs):
                         break
-            except Exception:
+            except Exception as e:
+                print(e)
                 pass
