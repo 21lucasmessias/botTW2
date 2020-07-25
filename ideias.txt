@@ -1,5 +1,0 @@
-Criar um loop infinito onde ele sleepa a quantidade de tempo do menor tempo para conclusão de ataque e assim que o ataque retornar, perguntar se gostaria de enviar novamente.
-
-
-uma lista de ataques que contem o tempo de retorno o id da vila atacante e o da vila atacada e a quantidade de tropas.
-se o tempo atual for maior que o tempo de retorno, então enviar novamente as tropas e atualizar o valor de retorno
