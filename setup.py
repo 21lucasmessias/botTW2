@@ -8,5 +8,8 @@ setup(
    install_requires = [
       'asyncio~=3.4.3',
       'websockets~=8.1',
+      'json',
+      'time',
+      'traceback'
    ],
 )
