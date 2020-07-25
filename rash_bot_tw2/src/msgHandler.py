@@ -1,4 +1,4 @@
-from src.utils import produceMessage, lUnits, getJsonFromMsg
+from rash_bot_tw2.src.utils import produceMessage, lUnits, getJsonFromMsg
 import traceback
 
 class MessageHandler:
@@ -139,6 +139,5 @@ class MessageHandler:
                     self.oRcv = getJsonFromMsg(msgServer)
                     if await self.MsgsCall[self.oRcv['type']](**kwargs):
                         break
-            except Exception as e:
+            except Exception:
                 pass
-                #print(e)

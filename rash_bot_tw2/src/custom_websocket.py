@@ -1,8 +1,8 @@
 import websockets
 from time import sleep
 import random
-from src.utils import produceMessage, lUnits, getJsonFromMsg
-from src.msgHandler import MessageHandler
+from rash_bot_tw2.src.utils import produceMessage, lUnits, getJsonFromMsg
+from rash_bot_tw2.src.msgHandler import MessageHandler
 
 class CustomWebsocket:
     def __init__(self, session):

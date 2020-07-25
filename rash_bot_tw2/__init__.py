@@ -1,7 +1,7 @@
 import asyncio
 
-from src.session import Session
-from src.custom_websocket import CustomWebsocket
+from rash_bot_tw2.src.session import Session
+from rash_bot_tw2.src.custom_websocket import CustomWebsocket
 
 if __name__ == "__main__":
     session = Session()
