@@ -29,10 +29,12 @@ class CustomWebsocket:
         if option == 1:
             commands = int(input(f'Quantidade de ataques que deseja realizar:'))
             await self.tryAttackBarbarians(ws, commands)
+            self.session.bAutomatic = True
             await self.tryAutoAttackBarbarians(ws)
 
         elif option == 2:
             if(str(input('Deseja continuar rodando no modo ataque automático?')) == 's'):
+                self.session.bAutomatic = True
                 await self.tryAutoAttackBarbarians(ws)
     
     # Le o mapa e absorve informações
@@ -41,17 +43,13 @@ class CustomWebsocket:
             for y in range(self.session.lVillagesPlayer[0]['y']-25, self.session.lVillagesPlayer[0]['y']+25, 25):
                 await ws.send(produceMessage(self, 'Map/getVillagesByArea', {"x":str(x),"y":str(y),"width":25,"height":25}))
                 await self.msgHandler.RequestHandler()
+
         self.sortBarbarians()
 
     # Organiza para as vilas mais proximas ficarem por primeiro   
     def sortBarbarians(self):
         for village in self.session.lVillagesPlayer:
             village['lBarb'] = sorted(village['lBarb'], key=lambda k: k['dist'])
-
-    # Organiza a lista de comandos para as serão executadas antes
-    def sortTimingCommands(self):
-        for village in self.session.lVillagesPlayer:
-            village['lAtqs'] = sorted(village['lAtqs'], key=lambda k: k['time_completed'])
 
     # Envia as tropas
     async def tryAttackBarbarians(self, ws, commands):
@@ -81,30 +79,17 @@ class CustomWebsocket:
             for i in range(0, commands):
                 if i == 0 and firstAttackUnits:
                     await ws.send(produceMessage(self, 'Command/sendCustomArmy', {"start_village":village['id'],"target_village":village['lBarb'][i]['id'],"type":"attack","units":firstAttackUnits,"icon":0,"officers":{},"catapult_target":"headquarter"}))
-                    await self.msgHandler.RequestHandler(village=village, units=firstAttackUnits)
+                    await ws.send('2')
+                    await self.msgHandler.RequestHandler()
                 elif defaultAttackUnits:
                     await ws.send(produceMessage(self, 'Command/sendCustomArmy', {"start_village":village['id'],"target_village":village['lBarb'][i]['id'],"type":"attack","units":defaultAttackUnits,"icon":0,"officers":{},"catapult_target":"headquarter"}))
-                    await self.msgHandler.RequestHandler(village=village, units=defaultAttackUnits)
+                    await ws.send('2')
+                    await self.msgHandler.RequestHandler()
 
         print("Tropas enviadas com sucesso!")
 
     async def tryAutoAttackBarbarians(self, ws):
-        self.sortTimingCommands
         while True:
-            await ws.send(produceMessage(self, 'System/getTime', sMore=',"data":{}'))
+            await ws.send('2')
             await self.msgHandler.RequestHandler()
-
-            for village in self.session.lVillagesPlayer:
-                print(f"Proximo ataque em: {village['lAtqs'][0]['time_completed'] - self.session.iActualTime}")
-                if village['lAtqs'][0]['time_completed'] < self.session.iActualTime:
-                    await ws.send(produceMessage(self, 'Command/sendCustomArmy',{"start_village":village['id'],"target_village":village['lAtqs'][0]['id_barb'],"type":"attack","units":village['lAtqs'][0]['units'],"icon":0,"officers":{},"catapult_target":"headquarter"}))
-                    await self.msgHandler.RequestHandler(village=village, units=village['lAtqs'][0]['units'])
-                    del village['lAtqs'][0]
-
-                    self.sortTimingCommands
-
-                    print(f"Tropas enviadas de {village['id']} para {village['lAtqs'][0]['id_barb']}")
-                else:
-                    await ws.send('2')
-
             sleep(random.randrange(7,12))

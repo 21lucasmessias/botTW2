@@ -1,4 +1,5 @@
 from rash_bot_tw2.src.utils import produceMessage, lUnits, getJsonFromMsg
+from time import sleep
 import traceback
 
 class MessageHandler:
@@ -13,126 +14,74 @@ class MessageHandler:
             'Premium/items': self.Premium_items,
             'Character/info': self.Character_info,
             'Map/villageDetails': self.Map_villageDetails,
-            'Overview/commands': self.Overview_commands,
-            'System/time': self.System_time,
             'Map/villageData': self.Map_villageData,
-            'Command/sent': self.Command_sent,
+            'Command/returned': self.Command_returned,
         }
 
     # Bypass
-    async def System_welcome(self, **kwargs):
+    async def System_welcome(self):
         await self.ws.send(produceMessage(self, 'Authentication/login', {'name': self.session.sUsername, "pass": self.session.sPassword}))
 
-        return False
-
     # Bypass
-    async def Login_success(self, **kwargs):
+    async def Login_success(self):
         self.session.sId = str(self.oRcv['data']['player_id'])
         self.session.sWorldId = self.oRcv['data']['characters'][0]['world_id']
         await self.ws.send(produceMessage(self, 'Authentication/selectCharacter', {"id": self.session.sId, 'world_id':self.session.sWorldId}))
 
-        return False
-
     # Bypass
-    async def Authentication_characterSelected(self, **kwargs):
+    async def Authentication_characterSelected(self):
         await self.ws.send(produceMessage(self, "Premium/listItems"))
 
-        return False
-
     # Popula o inventário
-    async def Premium_items(self, **kwargs):
+    async def Premium_items(self):
         self.session.lInventory = self.oRcv['data']['inventory']
         await self.ws.send(produceMessage(self, 'Character/getInfo', sMore=',"data":{}'))
 
-        return False
-
     # Popula a lista de vilas
-    async def Character_info(self, **kwargs):
+    async def Character_info(self):
         self.session.lVillagesPlayer = self.oRcv['data']['villages']
+        
 
         for village in self.session.lVillagesPlayer:
             village['lBarb'] = []
-            village['lAtqs'] = []
             village['lUnits'] = {}
             await self.ws.send(produceMessage(self, 'Map/getVillageDetails', {'village_id': str(village['id']), 'my_village_id': str(village['id']),'num_reports':5}))
         
-        await self.ws.send(produceMessage(self, 'System/getTime', sMore=',"data":{}'))
-        return False
-
-    # Popula as unidades de combate
-    async def Map_villageDetails(self, **kwargs):
+    # Popula as unidades de combate e armazena a quantia de ataques atuais
+    async def Map_villageDetails(self):
         for village in self.session.lVillagesPlayer:
             if self.oRcv['data']['village_id'] == village['id']:
+                village['qntAtaques'] = len(self.oRcv['data']['commands']['own'])
+
                 for (key, value) in sorted(self.oRcv['data']['units'].items(), key=lambda k: k[1]):
                     if value != 0:
                         village['lUnits'][key] = value
-                village['qntAtaques'] = len(self.oRcv['data']['commands']['own'])
 
-                await self.ws.send(produceMessage(self, 'Overview/getCommands', {"count":25,"offset":0,"sorting":"origin_village_name","reverse":0,"groups":[],"directions":["forward","back"],"command_types":["attack"],"villages":[str(village['id'])]}))
-                if village['qntAtaques'] > 25:
-                    await self.ws.send(produceMessage(self, 'Overview/getCommands', {"count":25,"offset":25,"sorting":"origin_village_name","reverse":0,"groups":[],"directions":["forward","back"],"command_types":["attack"],"villages":[str(village['id'])]}))
-        
-        return False
-
-    # Popula os ataques atuais de cada vila                
-    async def Overview_commands(self, **kwargs):
-        if self.oRcv['data']['total'] > 0:
-            for village in self.session.lVillagesPlayer:
-                if self.oRcv['data']['commands'][0]['origin_village_id'] == village['id']:
-                    for command in self.oRcv['data']['commands']:
-                        units = {}
-
-                        for unit in lUnits:
-                            if command[unit] > 0:
-                                units[unit] = command[unit]
-
-                        village['lAtqs'].append({'units':units,
-                                                    'id_vil': command['origin_village_id'],
-                                                    'id_barb': command['target_village_id'],
-                                                    'time_completed': command['time_completed'],
-                                                    'time': (command['time_completed'] - command['time_start'])
-                                                })
-
-                    village['lAtqs'] = sorted(village['lAtqs'], key=lambda k: k['time_completed'])
-
-        return False
+        self.session.aux += 1
+        if self.session.aux == len(self.session.lVillagesPlayer):
+            await self.ws.send('2')
 
     # Popula a lista de vilas bárbaras para cada vila que o usuário com a distância da vila para a dos bárbaros
-    async def Map_villageData(self, **kwargs):
+    async def Map_villageData(self):
         for bvillage in self.oRcv['data']['villages']:
             if bvillage['name'] == 'Aldeia Bárbara':
                 for pVillage in self.session.lVillagesPlayer:
                     pVillage['lBarb'].append({'id':bvillage['id'], 'dist':abs(bvillage['x'] - pVillage['x']) + abs(bvillage['y'] - pVillage['y'])})
-                    
-        return True
 
-    # Atualiza a lista de comandos
-    async def Command_sent(self, **kwargs):
-        village = kwargs.get('village')
-        units = kwargs.get('units')
-        village['lAtqs'].append({
-            'units':units,
-            'id_vil': self.oRcv['data']['origin']['id'],
-            'id_barb': self.oRcv['data']['target']['id'],
-            'time_completed': self.oRcv['data']['time_completed'],
-        })
+        await self.ws.send('2')
 
-        return True
+    async def Command_returned(self):
+        if self.session.bAutomatic:
+            await self.ws.send(produceMessage(self, 'Command/sendCustomArmy', {"start_village":self.oRcv['data']['origin']['id'],"target_village":self.oRcv['data']['target']['id'],"type":"attack","units":self.oRcv['data']['units'],"icon":0,"officers":{},"catapult_target":"headquarter"}))
+            await self.ws.send('2')
 
-    # ByPass
-    async def System_time(self, **kwargs):
-        self.session.iActualTime = self.oRcv["data"]["time"]
-
-        return True
-
-    async def RequestHandler(self, **kwargs):      
+    async def RequestHandler(self):      
         async for msgServer in self.ws:
-            print(msgServer)
             try:
                 if 'type' in msgServer:
                     self.oRcv = getJsonFromMsg(msgServer)
-                    if await self.MsgsCall[self.oRcv['type']](**kwargs):
-                        break
-            except Exception as e:
-                print(e)
+                    await self.MsgsCall[self.oRcv['type']]()
+                elif msgServer == '3':
+                    break
+            except Exception:
                 pass
